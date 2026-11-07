@@ -1,0 +1,16 @@
+# 부트스트랩 격리 nft 표를 wg0 보다 먼저 올린다. 데몬이 못 떠도 격리는 남아야 해서 따로 둔다.
+[Unit]
+Description=AccessTool bootstrap isolation (nft table inet accesstool)
+Before=wg-quick@wg0.service
+DefaultDependencies=no
+After=local-fs.target
+
+[Service]
+Type=oneshot
+RemainAfterExit=yes
+# accessd 가 wg0.conf 를 쓰다 죽어 0바이트가 됐으면 .bak 으로 되돌린다 (root 로 wg0 보다 먼저 도는 곳이 여기다). 실패해도 격리는 올린다
+ExecStartPre=-/bin/sh -c 'if [ -e /etc/wireguard/wg0.conf ] && [ ! -s /etc/wireguard/wg0.conf ] && [ -s /var/lib/accesstool/wg0.conf.bak ]; then cat /var/lib/accesstool/wg0.conf.bak > /etc/wireguard/wg0.conf; fi'
+ExecStart=/usr/sbin/nft -f /etc/accesstool/accesstool.nft
+
+[Install]
+WantedBy=multi-user.target wg-quick@wg0.service

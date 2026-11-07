@@ -1,0 +1,10 @@
+# homegames-join.exe 옆에 두는 설정 (보기). 진짜 값은 미니PC 에서 `sudo cat /var/lib/accesstool/join.conf` 로 꺼낸다.
+# 부트스트랩 비밀키가 들어 있다 — 친구에게만 준다. 아래 값은 자리만 채운 가짜다.
+bootstrap_private_key = <부트스트랩 비밀키 base64>
+endpoint = <DDNS 이름>:51820
+server_public_key = <서버 공개키 base64>
+# 아래는 빼면 기본값
+server_ip = 10.183.26.1
+intake_port = 7480
+# WireGuard 1.1.1 MSI 의 SHA256. 빼면 exe 에 든 기본값(옛 INSTALL.bat 값)을 쓴다
+# msi_sha256 = <64자리 hex>

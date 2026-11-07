@@ -1,0 +1,16 @@
+# 격리 실측 ①(집 LAN 방식)용 메인 PC 부트스트랩 conf 틀. 비밀값은 없다 — <...> 칸을 채워 git 밖에 저장해 WireGuard 앱에 넣는다.
+# 값은 미니PC 의 `sudo cat /var/lib/accesstool/join.conf` 에서 옮긴다 (친구 exe 의 joinflow.BootstrapConf 와 같은 꼴).
+# Endpoint 는 DDNS 가 아니라 미니PC LAN 주소다 (아래 192.168.1.10 은 예시값, 내 미니PC 주소로 바꾼다). 바깥 경로는 ⑦ 친구 실가입 때 따로 확인한다.
+# AllowedIPs 두 판 :
+#   첫 판  10.183.26.1/32  — 친구 exe 와 같은 값. 다른 친구 IP 로 가는 길은 터널을 안 탄다.
+#   둘째 판 10.183.26.0/24 — 다른 친구 IP 도 터널을 타서 포워딩 차단까지 시험된다.
+#   0.0.0.0/0 은 쓰지 않는다 (Windows WireGuard 가 터널 밖을 막아 메인 PC 인터넷이 끊긴다).
+[Interface]
+PrivateKey = <join.conf 의 bootstrap_private_key>
+Address = 10.183.26.254/32
+
+[Peer]
+PublicKey = <join.conf 의 server_public_key>
+Endpoint = 192.168.1.10:51820
+AllowedIPs = 10.183.26.1/32
+PersistentKeepalive = 25

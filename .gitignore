@@ -1,0 +1,8 @@
+# 빌드 산출물
+/accessd
+/accessd.exe
+/deploy/accessd
+*.exe
+# 개인 값 (키·DDNS·토큰 사본)
+*.local.*
+join.conf

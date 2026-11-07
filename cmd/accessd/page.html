@@ -1,0 +1,93 @@
+<!doctype html>
+<html lang="ko">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>AccessTool 승인</title>
+<style>
+body { font-family: sans-serif; margin: 16px; max-width: 900px; }
+table { border-collapse: collapse; width: 100%; margin-bottom: 24px; }
+th, td { border: 1px solid #ccc; padding: 6px; text-align: left; }
+.code { font-family: monospace; font-size: 1.4em; letter-spacing: 2px; }
+.msg { color: #b00; }
+form { display: inline; }
+details.help { border: 1px solid #ccc; padding: 6px 12px; margin-bottom: 24px; }
+details.help summary { cursor: pointer; font-weight: bold; }
+details.help li { margin: 4px 0; }
+</style>
+</head>
+<body>
+{{if .Login}}
+<h1>로그인</h1>
+{{if .Message}}<p class="msg">{{.Message}}</p>{{end}}
+<form method="post" action="/login">
+<input type="password" name="token" autocomplete="off" required>
+<button type="submit">들어가기</button>
+</form>
+<p>토큰은 설치 때 한 번 보여 준 값이다 (미니PC <code>sudo cat /var/lib/accesstool/web.token</code>). 사용법은 들어간 뒤 화면에 있다.</p>
+{{else}}
+<h1>가입 요청</h1>
+<p>친구가 알려 준 확인 코드와 <b>같을 때만</b> 승인한다.</p>
+<details class="help">
+<summary>사용법</summary>
+<h3>준비 (처음 한 번)</h3>
+<ul>
+<li>친구에게 줄 zip 은 메인 PC 에서 저장소의 <code>Test\make-friend-zip.ps1</code> 로 만든다. 다운로드 폴더에 생긴다.</li>
+<li>zip 안에는 <code>homegames-join.exe</code> 와 <code>join.conf</code> 두 파일이 같은 폴더로 들어 있다.</li>
+</ul>
+<h3>친구가 할 일</h3>
+<ol>
+<li>zip 을 「모두 압축 풀기」로 푼다.</li>
+<li><code>homegames-join.exe</code> 실행 → UAC 「예」. SmartScreen 이 막으면 「추가 정보 → 실행」.</li>
+<li>이름을 넣는다.</li>
+<li>화면에 뜬 확인 코드 6자리를 디스코드로 알려 준다. 창을 닫았다 다시 켜도 이어서 기다린다.</li>
+</ol>
+<h3>내가 할 일</h3>
+<ol>
+<li>이 화면의 이름·확인 코드가 친구가 알려 준 코드와 같은지 본다.</li>
+<li>같으면 「승인」, 다르면 「거절」.</li>
+<li>승인하면 친구 exe 가 알아서 진짜 터널로 갈아타고 끝난다.</li>
+<li>게임 접속 주소는 터널 서버 IP <code>10.183.26.1</code> 이다. 친구 exe 도 끝날 때 이 주소를 띄운다 (포트는 따로 알려 준다).</li>
+</ol>
+<h3>주의</h3>
+<ul>
+<li><b>한 번에 한 명씩</b> 가입시킨다. 모두 같은 부트스트랩 키를 써서 동시에 하면 꼬인다.</li>
+<li>같은 zip 을 여러 친구가 써도 된다. 단 공개된 곳에 올리지 않는다.</li>
+<li>zip 이 퍼졌으면 미니PC 에서 <code>sudo bash install.sh --web-addr &lt;미니PC LAN IP&gt; --admin-pc &lt;메인 PC LAN IP&gt; --rotate-bootstrap</code> 을 돌리고, <code>make-friend-zip.ps1</code> 로 zip 을 다시 만든다. exe 는 그대로, 이미 가입한 친구도 그대로다.</li>
+<li>다시 가입하려면 <code>homegames-join.exe --rejoin</code>.</li>
+<li>메인 PC 의 시험 터널 <code>bootstrap-test</code> 가 켜져 있으면 친구 가입 전에 끈다.</li>
+</ul>
+</details>
+<table>
+<tr><th>이름</th><th>확인 코드</th><th>받은 시각</th><th></th></tr>
+{{range .Pending}}
+<tr><td>{{.Name}}</td><td class="code">{{.Code}}</td><td>{{.Created.Format "01-02 15:04"}}</td>
+<td>
+<form method="post" action="/approve"><input type="hidden" name="id" value="{{.ID}}"><button type="submit">승인</button></form>
+<form method="post" action="/reject"><input type="hidden" name="id" value="{{.ID}}"><button type="submit">거절</button></form>
+</td></tr>
+{{else}}
+<tr><td colspan="4">대기 중인 요청 없음</td></tr>
+{{end}}
+</table>
+
+<h2>피어</h2>
+{{if .PeersErr}}<p class="msg">{{.PeersErr}}</p>{{end}}
+<table>
+<tr><th>이름</th><th>터널 IP</th><th>마지막 핸드셰이크</th><th>만든 곳</th><th></th></tr>
+{{range .Peers}}
+<tr><td>{{.Name}}</td><td>{{.IP}}</td><td>{{.Handshake}}</td><td>{{if .Mine}}accesstool{{else}}wg-friend{{end}}</td>
+<td>{{if not .Bootstrap}}<form method="post" action="/revoke"><input type="hidden" name="name" value="{{.Name}}"><button type="submit">회수</button></form>{{end}}</td></tr>
+{{end}}
+</table>
+
+<h2>최근 결과 (7일)</h2>
+<table>
+<tr><th>이름</th><th>코드</th><th>상태</th><th>시각</th></tr>
+{{range .Recent}}
+<tr><td>{{.Name}}</td><td class="code">{{.Code}}</td><td>{{stateName .State}}</td><td>{{.Decided.Format "01-02 15:04"}}</td></tr>
+{{end}}
+</table>
+{{end}}
+</body>
+</html>

@@ -1,0 +1,13 @@
+#!/usr/sbin/nft -f
+# 부트스트랩 피어(10.183.26.254)는 접수 API(10.183.26.1:7480/tcp) 말고 아무 데도 못 닿는다.
+# 버리기만 한다. 받기는 ufw 몫이다 (설계 5장). 다시 불러도 안전하게 지우고 새로 만든다.
+table inet accesstool
+delete table inet accesstool
+
+table inet accesstool {
+	chain input {
+		type filter hook input priority -10; policy accept;
+		iifname "wg0" ip saddr 10.183.26.254 ip daddr 10.183.26.1 tcp dport 7480 counter return
+		iifname "wg0" ip saddr 10.183.26.254 counter drop
+	}
+}
