@@ -51,7 +51,7 @@ MIT 라이선스 (`LICENSE`).
 ## 빌드 · 릴리스 (CI)
 
 - `.github/workflows/build.yml` 이 main 푸시·PR·태그 `v*` 마다 vet → test → go-winres → 빌드(`-trimpath`) → `SHA256SUMS` 를 돌리고 `dist` 산출물로 올린다.
-- 태그 `vX.Y.Z` 를 푸시하면 Release 에 `homegames-join.exe` · `accessd` · `SHA256SUMS` 가 붙는다. 태그 전에 `cmd/homegames-join/winres/winres.json` 의 판 번호를 올린다.
+- 태그 `vX.Y.Z` 를 푸시하면 Release 에 `homegames-join.exe` · `accessd` · `SHA256SUMS` 가 붙는다. 태그 전에 `cmd/homegames-join/winres/winres.json` 의 판 번호를 올린다. 태그와 winres.json 판이 다르면 CI 가 멈춘다.
 - 서명은 SignPath Foundation 승인 뒤 워크플로에 붙인다. 규칙은 [`Docs/Guide/코드서명정책.md`](Docs/Guide/코드서명정책.md).
 
 ## 친구에게 줄 zip
