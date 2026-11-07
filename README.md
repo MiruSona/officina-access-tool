@@ -7,6 +7,7 @@ MIT 라이선스 (`LICENSE`).
 | 문서 | 내용 |
 | --- | --- |
 | [`Docs/Design/2026-11-04-승인형가입설계.md`](Docs/Design/2026-11-04-승인형가입설계.md) | 1차 설계 — 흐름 · 부품 · 프로토콜 · 보안 경계 · 결정 표 · 검증 계획 |
+| [`Docs/Guide/코드서명정책.md`](Docs/Guide/코드서명정책.md) | 코드 서명 정책 — 서명 대상 · 빌드 출처 · 릴리스 절차 · 친구 PC 에 하는 일 전부 · 제거 방법 |
 
 ## 폴더 지도
 
@@ -39,12 +40,19 @@ MIT 라이선스 (`LICENSE`).
 - `wg-friend` 는 이전에 쓰던 피어 관리 셸 스크립트다 (이 저장소에 없다). 없어도 된다 — 같은 블록 꼴·같은 잠금 파일을 써서 같이 돌아도 안 꼬이게 맞춰 둔 것이다.
 
 - 시험 : `go vet ./... ; go test -count=1 ./...`
-- 빌드 (메인 PC PowerShell) : `$env:GOOS='linux'; $env:GOARCH='amd64'; $env:CGO_ENABLED='0'; go build -o deploy/accessd ./cmd/accessd`
+- 빌드 (메인 PC PowerShell) : `$env:GOOS='linux'; $env:GOARCH='amd64'; $env:CGO_ENABLED='0'; go build -trimpath -o deploy/accessd ./cmd/accessd`
 - 설치 (미니PC, `deploy/` 폴더를 올린 뒤) : `sudo bash install.sh --web-addr <미니PC LAN IP> --admin-pc <메인 PC LAN IP> --endpoint <DDNS 이름>:51820`
   - 예 : `sudo bash install.sh --web-addr 192.168.1.10 --admin-pc 192.168.1.20 --endpoint games.example.org:51820`
   - `--web-addr`(승인 웹이 묶일 LAN IP)·`--admin-pc`(승인 웹에 들어올 수 있는 한 대)는 **매번 꼭 준다.** 판올림은 `--endpoint` 만 빼고 다시 돌린다.
 - 게임 접속 주소는 터널 서버 IP `10.183.26.1` 이다. 친구 exe 가 가입 끝에 화면에 띄운다. hosts 는 안 고친다 (설계 12장).
-- 친구 exe 빌드 : `$env:GOOS='windows'; $env:GOARCH='amd64'; $env:CGO_ENABLED='0'; go build -o bin/homegames-join.exe ./cmd/homegames-join`
+- 친구 exe 빌드 : 먼저 버전 정보·매니페스트를 만든다 (`go install github.com/tc-hib/go-winres@v0.3.3` 한 번, `cd cmd/homegames-join; go-winres make --arch amd64; cd ../..`). 그다음 `$env:GOOS='windows'; $env:GOARCH='amd64'; $env:CGO_ENABLED='0'; go build -trimpath -o bin/homegames-join.exe ./cmd/homegames-join`
+  - `.syso` 는 커밋하지 않는다 (gitignore). 빼먹어도 빌드는 되지만 exe 에 버전 정보가 안 들어간다.
+
+## 빌드 · 릴리스 (CI)
+
+- `.github/workflows/build.yml` 이 main 푸시·PR·태그 `v*` 마다 vet → test → go-winres → 빌드(`-trimpath`) → `SHA256SUMS` 를 돌리고 `dist` 산출물로 올린다.
+- 태그 `vX.Y.Z` 를 푸시하면 Release 에 `homegames-join.exe` · `accessd` · `SHA256SUMS` 가 붙는다. 태그 전에 `cmd/homegames-join/winres/winres.json` 의 판 번호를 올린다.
+- 서명은 SignPath Foundation 승인 뒤 워크플로에 붙인다. 규칙은 [`Docs/Guide/코드서명정책.md`](Docs/Guide/코드서명정책.md).
 
 ## 친구에게 줄 zip
 
@@ -52,7 +60,7 @@ zip 하나에 두 파일만 넣는다. 두 파일은 **같은 폴더**에 있어
 
 | 파일 | 어디서 |
 | --- | --- |
-| `homegames-join.exe` | 위 빌드의 `bin/homegames-join.exe` (서명 없음) |
+| `homegames-join.exe` | 위 빌드의 `bin/homegames-join.exe`, 또는 GitHub Release 의 것 (지금은 서명 없음) |
 | `join.conf` | 미니PC 에서 `sudo cat /var/lib/accesstool/join.conf` 를 그대로 저장. 꼴은 `deploy/join.conf.example` |
 
 `Test/make-friend-zip.ps1 -SshHost <미니PC ssh 별칭>` 을 돌리면 다운로드 폴더에 zip 이 만들어진다 (sudo 비밀번호 한 번, 키가 화면에 안 찍힘).

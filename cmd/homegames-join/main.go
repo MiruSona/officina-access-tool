@@ -37,7 +37,7 @@ func run() int {
 	rejoin := flag.Bool("rejoin", false, "이미 연결돼 있어도 가입을 다시 한다")
 	flag.Parse()
 
-	// 매니페스트(.syso)를 안 쓰므로 여기서 UAC 를 한 번 받는다. 새 창이 뜨고 이 창은 닫힌다
+	// 매니페스트(winres)는 asInvoker 라 여기서 UAC 를 한 번 받는다. 새 창이 뜨고 이 창은 닫힌다
 	if !wgwin.IsAdmin() {
 		if err := wgwin.RelaunchAsAdmin(os.Args[1:]); err != nil {
 			fmt.Printf("[실패] %v\n", err)
